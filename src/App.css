@@ -1,0 +1,205 @@
+:root {
+  --grid-width: min(8vh, 7.5vw);
+  --grid-columns: 12;
+  --animation-speed: 0.5s;
+}
+
+.cell {
+  aspect-ratio: 1 / 1;
+  height: var(--grid-width);
+}
+
+.t {
+  background-color: cadetblue;
+}
+
+.f {
+  background-color: azure;
+}
+
+.rot0 {
+  transform: rotate(0deg);
+}
+
+.rot90 {
+  transform: rotate(90deg);
+}
+
+.rot180 {
+  transform: rotate(180deg);
+}
+
+.rot270 {
+  transform: rotate(270deg);
+}
+
+.wall-div {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  z-index: 1;
+}
+
+.wall {
+  height: inherit;
+  display: block;
+}
+
+.wall0 {
+  transform: rotate(0deg);
+}
+
+.wall1 {
+  transform: rotate(90deg);
+}
+
+.wall2 {
+  transform: rotate(180deg);
+}
+
+.wall3 {
+  transform: rotate(270deg);
+}
+
+.grid {
+  border: 5px solid black;
+  border-radius: 5px;
+  background-color: black;
+  display: grid;
+  grid-template-columns: repeat(var(--grid-columns), auto);
+  width: fit-content;
+  margin: auto;
+  position: relative;
+}
+
+.texture {
+  width: inherit;
+  height: inherit;
+}
+
+.robot-img {
+  aspect-ratio: 1 / 1;
+  width: var(--grid-width);
+  display: block;
+  position: absolute;
+  z-index: 2;
+  left: calc(var(--x-position) * var(--grid-width));
+  top: calc(var(--y-position) * var(--grid-width));
+  /*animation: 5s Move2 infinite;*/
+  opacity: 60%;
+  transition: left var(--animation-speed), top var(--animation-speed), transform var(--animation-speed);
+}
+
+@property --x-position {
+  syntax: '<number>';
+  initial-value: 0;
+  inherits: true;
+}
+
+@property --y-position {
+  syntax: '<number>';
+  initial-value: 0;
+  inherits: true;
+}
+
+@keyframes Move {
+  from {--x-position: 0}
+  to {--x-position: 10}
+}
+
+@keyframes Move2 {
+  0% {--x-position: 0; --y-position: 0}
+  50% {--x-position: 10; --y-position: 0}
+  100% {--y-position: 10; --x-position: 10}
+}
+
+.btn {
+  width: fit-content;
+  height: fit-content;
+  background-color: green;
+  border-color: black;
+  border-radius: 10px;
+  border-width: 2px;
+  border-style: solid;
+  color: white;
+  font-size: 20px;
+  padding: 12px;
+
+  &:hover {
+    background-color: forestgreen;
+  }
+  &:active {
+    background-color: darkgreen;
+  }
+}
+
+.ui {
+  margin-top: auto;
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  flex: min-content;
+}
+
+#root {
+  display: flex;
+  flex-wrap: wrap;
+  height: 100%;
+  gap: 10px;
+}
+
+html{
+  min-height: 100%;
+}
+
+body {
+  min-height: 100%;
+}
+
+.card {
+  border: solid black 2px;
+  border-radius: 15px;
+  padding: 5px 10px 10px;
+  text-align: center;
+  background-color: lightblue;
+  width: min-content;
+
+  img {
+    max-width: 90px;
+    aspect-ratio: 1 / 1;
+    margin-top: 3px;
+  }
+  h4 {
+    margin: 0;
+  }
+}
+
+.card-div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: auto;
+  justify-content: center;
+}
+
+.programmed-cards {
+  min-width: 300px;
+  min-height: 150px;
+  display: flex;
+  flex-wrap: wrap;
+  border: solid black 2px;
+  border-radius: 15px;
+  margin: auto;
+  background-color: lightgray;
+  gap: 10px;
+  padding: 10px;
+  justify-content: center;
+}
+
+.btn-div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+  gap: 5px;
+}
