@@ -9,14 +9,6 @@
   height: var(--grid-width);
 }
 
-.t {
-  background-color: cadetblue;
-}
-
-.f {
-  background-color: azure;
-}
-
 .rot0 {
   transform: rotate(0deg);
 }
@@ -78,6 +70,8 @@
 }
 
 .robot-img {
+  --x-position: 0;
+  --y-position: 0;
   aspect-ratio: 1 / 1;
   width: var(--grid-width);
   display: block;
@@ -88,29 +82,6 @@
   /*animation: 5s Move2 infinite;*/
   opacity: 60%;
   transition: left var(--animation-speed), top var(--animation-speed), transform var(--animation-speed);
-}
-
-@property --x-position {
-  syntax: '<number>';
-  initial-value: 0;
-  inherits: true;
-}
-
-@property --y-position {
-  syntax: '<number>';
-  initial-value: 0;
-  inherits: true;
-}
-
-@keyframes Move {
-  from {--x-position: 0}
-  to {--x-position: 10}
-}
-
-@keyframes Move2 {
-  0% {--x-position: 0; --y-position: 0}
-  50% {--x-position: 10; --y-position: 0}
-  100% {--y-position: 10; --x-position: 10}
 }
 
 .btn {
@@ -134,12 +105,12 @@
 }
 
 .ui {
-  margin-top: auto;
   margin-left: auto;
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
   flex: min-content;
+  align-content: space-between;
 }
 
 #root {
@@ -151,6 +122,7 @@
 
 html{
   min-height: 100%;
+  background-color: whitesmoke;
 }
 
 body {
@@ -162,8 +134,9 @@ body {
   border-radius: 15px;
   padding: 5px 10px 10px;
   text-align: center;
-  background-color: lightblue;
+  background-color: green;
   width: min-content;
+  color: white;
 
   img {
     max-width: 90px;
@@ -183,7 +156,7 @@ body {
   justify-content: center;
 }
 
-.programmed-cards {
+.Column {
   min-width: 300px;
   min-height: 150px;
   display: flex;
@@ -197,9 +170,8 @@ body {
   justify-content: center;
 }
 
-.btn-div {
+.run-div {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-evenly;
-  gap: 5px;
+  justify-content: end;
+  width: 100%;
 }

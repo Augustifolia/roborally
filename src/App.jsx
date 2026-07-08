@@ -1,4 +1,8 @@
 import { useState, Component } from 'react'
+import {DragDropProvider, useDroppable} from '@dnd-kit/react';
+import {useSortable} from "@dnd-kit/react/sortable";
+import {move} from '@dnd-kit/helpers';
+import {CollisionPriority} from '@dnd-kit/abstract';
 import crusher from './assets/crusher.png'
 import floor from './assets/floor.png'
 import repair from './assets/repair.png'
@@ -110,10 +114,9 @@ function wall_(x, y) {
 }
 
 function cell(key) {
-    const [clicked, setClick] = useState(false)
     let [x, y] = coordinates(key);
     return (
-        <div key={key} className={"cell " + (clicked? "t":"f") + " rot0"} onClick={() => (setClick(!clicked))}>
+        <div key={key} className={"cell rot0"}>
             {wall_(x, y)}
             <img className={"texture " + rot_from_coords(x, y)} src={texture_from_coords(x, y)} alt={key} title={x + ", " + y + " (" + key + ")"}></img>
         </div>
@@ -189,6 +192,12 @@ class Robot extends Component {
         let direction = event.detail.direction;
         if (action === "move") {
             self.move_(modifier, direction);
+        } else if (action === "move1") {
+            self.move_(1, direction);
+        } else if (action === "move2") {
+            self.move_(2, direction);
+        } else if (action === "move3") {
+            self.move_(3, direction);
         } else if (action === "backup") {
             self.move_(-modifier);
         } else if (action === "turn_left") {
@@ -331,34 +340,16 @@ class Robot extends Component {
     }
 }
 
-function send_move(action, modifier = 1, direction = null) {
-    document.dispatchEvent(new CustomEvent('move', {detail: {action: action, modifier: modifier, direction: direction}}));
-}
+function Card({id, index, column, type}) {
+  const {ref, isDragging} = useSortable({
+    id,
+    index,
+    type: 'item',
+    accept: 'item',
+    group: column
+  });
 
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function active_board_elements() {
-    console.log("activate_board_elements");
-    //express conveyor belts
-    document.dispatchEvent(new CustomEvent('express_conveyor'));
-    //slow and express conveyor belts
-    await sleep(200);
-    document.dispatchEvent(new CustomEvent('conveyor'));
-    //pushers push if active
-    //gears rotate 90 degrees
-    await sleep(200);
-    document.dispatchEvent(new CustomEvent('gear'));
-    //board lasers
-    //crushers activate, destroying robot
-    await sleep(200);
-    document.dispatchEvent(new CustomEvent('crusher'));
-}
-
-
-function Card({type}) {
-    let text = "";
+  let text = "";
     let priority = 720;
     if (type === "move1") {
         text = "Move 1";
@@ -375,37 +366,70 @@ function Card({type}) {
     } else if (type === "u_turn") {
         text = "U-turn";
     }
-    return <div className="card" draggable="true">
+    return <div className="card" ref={ref} data-dragging={isDragging}>
         <a>{priority}</a>
         <img src={roller} alt="roller" draggable="false" />
         <h4>{text}</h4>
     </div>
 }
 
-function programmed(cards, program) {
-    const a = [0, 0, 0, 0, 0];
-    for (let i = 0; i < cards.length; i++) {
-        if (program[i] > 0) {
-            console.log(program[i]);
-            a[program[i] - 1] = <Card key={i} type={cards[i]}></Card>;
-        }
-    }
-    return a;
+function Column({children, id}) {
+  const {isDropTarget, ref} = useDroppable({
+    id,
+    type: 'column',
+    accept: 'item',
+    collisionPriority: CollisionPriority.Low,
+  });
+  const style = isDropTarget ? {background: '#00000030'} : undefined;
+
+  return (
+    <div className="Column" ref={ref} style={style}>
+      {children}
+    </div>
+  );
 }
 
-function unprogrammed(cards, program) {
-    const a = [];
-    for (let i = 0; i < cards.length; i++) {
-        if (program[i] === 0) {
-            a.push(<Card key={i} type={cards[i]}></Card>);
-        }
+function send_move(action, modifier = 1, direction = null) {
+    document.dispatchEvent(new CustomEvent('move', {detail: {action: action, modifier: modifier, direction: direction}}));
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function active_board_elements(items, cards) {
+    for (let card of items["A"]) {
+        console.log("activate card");
+        send_move(cards[card]);
+
+        await sleep(200);
+
+        console.log("activate_board_elements");
+        //express conveyor belts
+        document.dispatchEvent(new CustomEvent('express_conveyor'));
+        //slow and express conveyor belts
+        await sleep(200);
+        document.dispatchEvent(new CustomEvent('conveyor'));
+        //pushers push if active
+        //gears rotate 90 degrees
+        await sleep(200);
+        document.dispatchEvent(new CustomEvent('gear'));
+        //board lasers
+        //crushers activate, destroying robot
+        await sleep(200);
+        document.dispatchEvent(new CustomEvent('crusher'));
+
+        await sleep(1000);
     }
-    return a;
 }
 
 function App() {
-    let [program, setProgram] = useState([1, 0, 3, 2, 4, 0, 0, 5, 0]);
     let cards = ["move1", "move2", "move3", "turn_left", "turn_right", "u_turn", "backup", "turn_left", "move1"];
+    const [items, setItems] = useState({
+        A: [],
+        B: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+    });
+
     return (
         <>
             <div className="grid" style={{"--grid-columns": width}}>
@@ -413,21 +437,21 @@ function App() {
                 <Robot></Robot>
             </div>
             <div className="ui">
-                <div className="programmed-cards">
-                    {programmed(cards, program)}
-                </div>
-                <div className="card-div">
-                    {unprogrammed(cards, program)}
-                </div>
-                <div className="btn-div">
-                    <button className="btn" onClick={() => {send_move("move", 1)}}>Move1</button>
-                    <button className="btn" onClick={() => {send_move("move", 2)}}>Move2</button>
-                    <button className="btn" onClick={() => {send_move("move", 3)}}>Move3</button>
-                    <button className="btn" onClick={() => {send_move("backup")}}>Back Up</button>
-                    <button className="btn" onClick={() => {send_move("turn_left")}}>Turn Left</button>
-                    <button className="btn" onClick={() => {send_move("turn_right")}}>Turn Right</button>
-                    <button className="btn" onClick={() => {send_move("u_turn")}}>U-Turn</button>
-                    <button className="btn" onClick={() => {active_board_elements()}}>Start</button>
+                <DragDropProvider
+                  onDragOver={(event) => {
+                    setItems((items) => move(items, event));
+                  }}
+                >
+                    {Object.entries(items).map(([column, items]) => (
+                      <Column key={column} id={column}>
+                        {items.map((id, index) => (
+                          <Card key={id} id={id} index={index} column={column} type={cards[id]} />
+                        ))}
+                      </Column>
+                    ))}
+                </DragDropProvider>
+                <div className="run-div">
+                    <button className="btn" onClick={() => {active_board_elements(items, cards)}}>Run</button>
                 </div>
             </div>
         </>
