@@ -1,4 +1,4 @@
-import { useState, Component } from 'react'
+import {useState, Component, useRef} from 'react'
 import {DragDropProvider, useDroppable} from '@dnd-kit/react';
 import {useSortable} from "@dnd-kit/react/sortable";
 import {move} from '@dnd-kit/helpers';
@@ -15,7 +15,7 @@ import roller_left from './assets/roller_left.png'
 import roller_right from './assets/roller_right.png'
 import void_ from './assets/void.png'
 import wall from './assets/wall.png'
-import robot from './assets/robot.jpg'
+import robot from './assets/robot.png'
 import gear_left from './assets/gear_left.png'
 import gear_right from './assets/gear_right.png'
 import laser from './assets/laser.png'
@@ -127,85 +127,73 @@ function clamp(value, min, max) {
     return Math.max(Math.min(value, max), min);
 }
 
-var self;
 class Robot extends Component {
-    constructor() {
+    constructor({id, x=2, y=4, rotation=0}) {
         super();
-        this.state = {x: 2, y: 4, rotation: 0};
-        self = this;
-
-        document.addEventListener("move", this.handle_event);
-        document.addEventListener("express_conveyor", this.express_conveyor);
-        document.addEventListener("conveyor", this.conveyor);
-        document.addEventListener("gear", this.gear);
-        document.addEventListener("crusher", this.crusher);
+        this.state = {x: x, y: y, rotation: rotation};
+        this.id = id;
     }
     async express_conveyor() {
-        let current_cell = map[self.state.y][self.state.x];
+        let current_cell = map[this.state.y][this.state.x];
         let t = current_cell[0];
         if (t === 9 || t === 10 || t === 11) {
-            self.move_(1, (current_cell[1] + 2)%4);
+            this.move_(1, (current_cell[1] + 2)%4);
         }
         await sleep(100)
-        current_cell = map[self.state.y][self.state.x];
+        current_cell = map[this.state.y][this.state.x];
         t = current_cell[0];
         if (t === 10) {
-            self.rotate(3);
+            this.rotate(3);
         } else if (t === 11) {
-            self.rotate(1);
+            this.rotate(1);
         }
     }
     async conveyor() {
-        let current_cell = map[self.state.y][self.state.x];
+        let current_cell = map[this.state.y][this.state.x];
         let t = current_cell[0];
         if (t === 9 || t === 10 || t === 11 || t === 6 || t === 7 || t === 8 || t === 5) {
-            self.move_(1, (current_cell[1] + 2)%4);
+            this.move_(1, (current_cell[1] + 2)%4);
         }
         await sleep(100)
-        current_cell = map[self.state.y][self.state.x];
+        current_cell = map[this.state.y][this.state.x];
         t = current_cell[0];
         if (t === 10 || t === 7) {
-            self.rotate(3);
+            this.rotate(3);
         } else if (t === 11 || t === 8) {
-            self.rotate(1);
+            this.rotate(1);
         }
     }
     gear() {
-        let current_cell = map[self.state.y][self.state.x];
+        let current_cell = map[this.state.y][this.state.x];
         let t = current_cell[0];
         if (t === 12) {
-            self.rotate(3);
+            this.rotate(3);
         } else if (t === 13) {
-            self.rotate(1);
+            this.rotate(1);
         }
     }
     crusher() {
-        let current_cell = map[self.state.y][self.state.x];
+        let current_cell = map[this.state.y][this.state.x];
         let t = current_cell[0];
         if (t === 5) {
             console.log("crushed");
         }
     }
-    handle_event(event) {
-        let action = event.detail.action;
-        let modifier = event.detail.modifier;
-        let direction = event.detail.direction;
-        if (action === "move") {
-            self.move_(modifier, direction);
-        } else if (action === "move1") {
-            self.move_(1, direction);
+    handle_card(action) {
+        if (action === "move1") {
+            this.move_(1);
         } else if (action === "move2") {
-            self.move_(2, direction);
+            this.move_(2);
         } else if (action === "move3") {
-            self.move_(3, direction);
+            this.move_(3);
         } else if (action === "backup") {
-            self.move_(-modifier);
+            this.move_(-1);
         } else if (action === "turn_left") {
-            self.rotate(3);
+            this.rotate(3);
         } else if (action === "turn_right") {
-            self.rotate(1);
+            this.rotate(1);
         } else if (action === "u_turn") {
-            self.rotate(2);
+            this.rotate(2);
         }
     }
     move_(distance, rotation = null) {
@@ -389,35 +377,43 @@ function Column({children, id}) {
   );
 }
 
-function send_move(action, modifier = 1, direction = null) {
-    document.dispatchEvent(new CustomEvent('move', {detail: {action: action, modifier: modifier, direction: direction}}));
-}
-
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function active_board_elements(items, cards) {
+async function active_board_elements(items, cards, robot_refs) {
     for (let card of items["A"]) {
         console.log("activate card");
-        send_move(cards[card]);
+        robot_refs[0].current.handle_card(cards[card]);
+        //for (let ref of robot_refs) {
+        //    ref.current.handle_card(cards[card]);
+        //}
 
         await sleep(200);
 
         console.log("activate_board_elements");
         //express conveyor belts
-        document.dispatchEvent(new CustomEvent('express_conveyor'));
+        for (let ref of robot_refs) {
+            ref.current.express_conveyor();
+        }
         //slow and express conveyor belts
         await sleep(200);
-        document.dispatchEvent(new CustomEvent('conveyor'));
+        for (let ref of robot_refs) {
+            ref.current.conveyor();
+        }
         //pushers push if active
+
         //gears rotate 90 degrees
         await sleep(200);
-        document.dispatchEvent(new CustomEvent('gear'));
+        for (let ref of robot_refs) {
+            ref.current.gear();
+        }
         //board lasers
         //crushers activate, destroying robot
         await sleep(200);
-        document.dispatchEvent(new CustomEvent('crusher'));
+        for (let ref of robot_refs) {
+            ref.current.crusher();
+        }
 
         await sleep(1000);
     }
@@ -429,12 +425,16 @@ function App() {
         A: [],
         B: [0, 1, 2, 3, 4, 5, 6, 7, 8],
     });
+    const robot_ids = [0, 1];
+    const robot_refs = robot_ids.map((id) => {return useRef(null)});
 
     return (
         <>
             <div className="grid" style={{"--grid-columns": width}}>
                 {Array.from(Array(width*height).keys().map(cell))}
-                <Robot></Robot>
+                {robot_ids.map((id) => (
+                    <Robot id={id} key={id} ref={robot_refs[id]} />
+                ))}
             </div>
             <div className="ui">
                 <DragDropProvider
@@ -451,7 +451,7 @@ function App() {
                     ))}
                 </DragDropProvider>
                 <div className="run-div">
-                    <button className="btn" onClick={() => {active_board_elements(items, cards)}}>Run</button>
+                    <button className="btn" onClick={() => {active_board_elements(items, cards, robot_refs)}}>Run</button>
                 </div>
             </div>
         </>

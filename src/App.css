@@ -79,8 +79,6 @@
   z-index: 2;
   left: calc(var(--x-position) * var(--grid-width));
   top: calc(var(--y-position) * var(--grid-width));
-  /*animation: 5s Move2 infinite;*/
-  opacity: 60%;
   transition: left var(--animation-speed), top var(--animation-speed), transform var(--animation-speed);
 }
 
