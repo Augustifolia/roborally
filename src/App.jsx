@@ -1,4 +1,4 @@
-import {useState, Component, useRef} from 'react'
+import {useState, Component, useRef, useImperativeHandle} from 'react'
 import {DragDropProvider, useDroppable} from '@dnd-kit/react';
 import {useSortable} from "@dnd-kit/react/sortable";
 import {move} from '@dnd-kit/helpers';
@@ -371,23 +371,53 @@ function Column({children, id}) {
   const style = isDropTarget ? {background: '#00000030'} : undefined;
 
   return (
-    <div className="Column" ref={ref} style={style}>
+    <div className="column" ref={ref} style={style}>
       {children}
     </div>
   );
+}
+
+function CardsManager({ref}) {
+    let cards = ["move1", "move2", "move3", "turn_left", "turn_right", "u_turn", "backup", "turn_left", "move1"];
+    const [items, setItems] = useState({
+        A: [],
+        B: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+    });
+
+    useImperativeHandle(ref, () => {
+        return {
+            get_action(index) {
+                let card = items["A"][index];
+                return cards[card];
+            }
+        };
+    }, [items, cards]);
+
+    return <DragDropProvider
+        onDragOver={(event) => {
+            setItems((items) => move(items, event));
+        }}
+    >
+        {Object.entries(items).map(([column, items]) => (
+            <Column key={column} id={column}>
+                {items.map((id, index) => (
+                    <Card key={id} id={id} index={index} column={column} type={cards[id]} />
+                ))}
+            </Column>
+        ))}
+    </DragDropProvider>
 }
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function active_board_elements(items, cards, robot_refs) {
-    for (let card of items["A"]) {
+async function active_board_elements(cards_refs, robot_refs) {
+    for (let i = 0; i < 5; i++) {
         console.log("activate card");
-        robot_refs[0].current.handle_card(cards[card]);
-        //for (let ref of robot_refs) {
-        //    ref.current.handle_card(cards[card]);
-        //}
+        for (let j = 0; j < cards_refs.length; j++) {
+            robot_refs[j].current.handle_card(cards_refs[j].current.get_action(i));
+        }
 
         await sleep(200);
 
@@ -420,13 +450,9 @@ async function active_board_elements(items, cards, robot_refs) {
 }
 
 function App() {
-    let cards = ["move1", "move2", "move3", "turn_left", "turn_right", "u_turn", "backup", "turn_left", "move1"];
-    const [items, setItems] = useState({
-        A: [],
-        B: [0, 1, 2, 3, 4, 5, 6, 7, 8],
-    });
     const robot_ids = [0, 1];
     const robot_refs = robot_ids.map((id) => {return useRef(null)});
+    const cards_refs = robot_ids.map((id) => {return useRef(null)});
 
     return (
         <>
@@ -437,21 +463,11 @@ function App() {
                 ))}
             </div>
             <div className="ui">
-                <DragDropProvider
-                  onDragOver={(event) => {
-                    setItems((items) => move(items, event));
-                  }}
-                >
-                    {Object.entries(items).map(([column, items]) => (
-                      <Column key={column} id={column}>
-                        {items.map((id, index) => (
-                          <Card key={id} id={id} index={index} column={column} type={cards[id]} />
-                        ))}
-                      </Column>
-                    ))}
-                </DragDropProvider>
+                {robot_ids.map((id) => {
+                    return <CardsManager key={id} ref={cards_refs[id]} />
+                })}
                 <div className="run-div">
-                    <button className="btn" onClick={() => {active_board_elements(items, cards, robot_refs)}}>Run</button>
+                    <button className="btn" onClick={() => {active_board_elements(cards_refs, robot_refs)}}>Start Turn</button>
                 </div>
             </div>
         </>

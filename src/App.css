@@ -154,7 +154,7 @@ body {
   justify-content: center;
 }
 
-.Column {
+.column {
   min-width: 300px;
   min-height: 150px;
   display: flex;
