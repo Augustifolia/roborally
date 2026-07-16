@@ -21,7 +21,7 @@ import gear_right from './assets/gear_right.png'
 import laser from './assets/laser.png'
 import './App.css'
 import { map } from "./map.jsx"
-import { deck } from "./cards.jsx"
+import { Deck } from "./cards.jsx"
 
 const flag = "flag";
 
@@ -441,18 +441,20 @@ function Column({children, id}) {
   );
 }
 
-function CardsManager({ref}) {
-    let cards = Array.from(Array(9).keys().map(() => { return random_choice(deck) }));
+function CardsManager({ref, deck}) {
+    let number_of_cards = 9;
+    let ids = Array.from(Array(number_of_cards).keys());
+    const [cards, setCards] = useState(deck.get_hand(number_of_cards));
     const [items, setItems] = useState({
         A: [],
-        B: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+        B: ids,
     });
 
     useImperativeHandle(ref, () => {
         return {
             get_action(index) {
                 let card = items["A"][index];
-                return cards[card];
+                return cards[card]?.action;
             }
         };
     }, [items, cards]);
@@ -514,6 +516,7 @@ async function active_board_elements(cards_refs, robot_refs) {
 }
 
 function App() {
+    const deck = new Deck();
     const robot_ids = [0, 1];
     const robot_refs = robot_ids.map((id) => {return useRef(null)});
     const cards_refs = robot_ids.map((id) => {return useRef(null)});
@@ -528,7 +531,7 @@ function App() {
             </div>
             <div className="ui">
                 {robot_ids.map((id) => {
-                    return <CardsManager key={id} ref={cards_refs[id]} />
+                    return <CardsManager key={id} ref={cards_refs[id]} deck={deck} />
                 })}
                 <div className="run-div">
                     <button className="btn" onClick={() => {active_board_elements(cards_refs, robot_refs)}}>Start Turn</button>

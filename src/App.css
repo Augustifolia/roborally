@@ -104,18 +104,16 @@
 
 .ui {
   margin-left: auto;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  flex: min-content;
-  align-content: space-between;
+  flex-grow: 1;
 }
 
 #root {
   display: flex;
-  flex-wrap: wrap;
   height: 100%;
   gap: 10px;
+  @media (max-width: 1300px) {
+    flex-wrap: wrap;
+  }
 }
 
 html{
@@ -162,7 +160,7 @@ body {
   flex-wrap: wrap;
   border: solid black 2px;
   border-radius: 15px;
-  margin: auto;
+  margin: auto auto 15px;
   background-color: lightgray;
   gap: 10px;
   padding: 10px;
