@@ -21,12 +21,18 @@ import gear_right from './assets/gear_right.png'
 import laser from './assets/laser.png'
 import './App.css'
 import { map } from "./map.jsx"
+import { deck } from "./cards.jsx"
 
 const flag = "flag";
 
 const width = 12;
 const height = 12;
 
+
+function random_choice(a) {
+    let i = Math.floor(Math.random() * a.length);
+    return a[i];
+}
 
 function get_texture(num) {
     switch (num) {
@@ -328,17 +334,71 @@ class Robot extends Component {
     }
 }
 
-function Card({id, index, column, type}) {
-  const {ref, isDragging} = useSortable({
-    id,
-    index,
-    type: 'item',
-    accept: 'item',
-    group: column
-  });
+function ArrowRight() {
+    return <div className="outer card-arrow-right-outer">
+        <div className="card-arrow-right">
+            <div>
+                <div className="arrow-spacer"></div>
+                <div className="arrow-right"></div>
+            </div>
+            <div className="head arrow-head"></div>
+        </div>
+    </div>
+}
 
-  let text = "";
-    let priority = 720;
+function ArrowLeft() {
+    return <div className="outer card-arrow-left-outer">
+        <div className="card-arrow-left">
+            <div className="head arrow-head"></div>
+            <div>
+                <div className="arrow-spacer"></div>
+                <div className="arrow-left"></div>
+            </div>
+        </div>
+    </div>
+}
+
+function ArrowU() {
+    return <div className="outer card-arrow-u-outer">
+        <div className="card-arrow-u">
+            <div className="arrow-right"></div>
+            <div className="arrow-left"></div>
+            <div className="head arrow-head"></div>
+        </div>
+    </div>
+}
+
+function ArrowUp() {
+    return <div className="outer card-arrow-up-outer">
+        <div className="card-arrow-up">
+            <div className="head arrow-head"></div>
+            <div className="arrow-up"></div>
+        </div>
+    </div>
+}
+
+function ArrowDown() {
+    return <div className="outer card-arrow-down-outer">
+        <div className="card-arrow-down">
+            <div className="arrow-up"></div>
+            <div className="head arrow-head"></div>
+        </div>
+    </div>
+}
+
+function Card({id, index, column, card}) {
+    const {ref, isDragging} = useSortable({
+        id,
+        index,
+        type: 'item',
+        accept: 'item',
+        group: column
+    });
+
+    let type = card.action;
+    let text = "";
+    let priority = card.priority;
+    let arrow = <ArrowUp></ArrowUp>
     if (type === "move1") {
         text = "Move 1";
     } else if (type === "move2") {
@@ -347,16 +407,20 @@ function Card({id, index, column, type}) {
         text = "Move 3";
     } else if (type === "backup") {
         text = "Backup";
+        arrow = <ArrowDown></ArrowDown>
     } else if (type === "turn_left") {
         text = "Turn left";
+        arrow = <ArrowLeft></ArrowLeft>
     } else if (type === "turn_right") {
         text = "Turn right";
+        arrow = <ArrowRight></ArrowRight>
     } else if (type === "u_turn") {
         text = "U-turn";
+        arrow = <ArrowU></ArrowU>
     }
     return <div className="card" ref={ref} data-dragging={isDragging}>
         <a>{priority}</a>
-        <img src={roller} alt="roller" draggable="false" />
+        {arrow}
         <h4>{text}</h4>
     </div>
 }
@@ -378,7 +442,7 @@ function Column({children, id}) {
 }
 
 function CardsManager({ref}) {
-    let cards = ["move1", "move2", "move3", "turn_left", "turn_right", "u_turn", "backup", "turn_left", "move1"];
+    let cards = Array.from(Array(9).keys().map(() => { return random_choice(deck) }));
     const [items, setItems] = useState({
         A: [],
         B: [0, 1, 2, 3, 4, 5, 6, 7, 8],
@@ -401,7 +465,7 @@ function CardsManager({ref}) {
         {Object.entries(items).map(([column, items]) => (
             <Column key={column} id={column}>
                 {items.map((id, index) => (
-                    <Card key={id} id={id} index={index} column={column} type={cards[id]} />
+                    <Card key={id} id={id} index={index} column={column} card={cards[id]} />
                 ))}
             </Column>
         ))}
@@ -413,10 +477,10 @@ function sleep(ms) {
 }
 
 async function active_board_elements(cards_refs, robot_refs) {
-    for (let i = 0; i < 5; i++) {
+    for (let phase = 0; phase < 5; phase++) {
         console.log("activate card");
-        for (let j = 0; j < cards_refs.length; j++) {
-            robot_refs[j].current.handle_card(cards_refs[j].current.get_action(i));
+        for (let robot = 0; robot < cards_refs.length; robot++) {
+            robot_refs[robot].current.handle_card(cards_refs[robot].current.get_action(phase));
         }
 
         await sleep(200);
