@@ -134,16 +134,17 @@ function clamp(value, min, max) {
 }
 
 class Robot extends Component {
-    constructor({id, x=2, y=4, rotation=0}) {
+    constructor({id, x=4, y=8, rotation=3, robot_refs}) {
         super();
         this.state = {x: x, y: y, rotation: rotation};
         this.id = id;
+        this.robot_refs = robot_refs;
     }
     async express_conveyor() {
         let current_cell = map[this.state.y][this.state.x];
         let t = current_cell[0];
         if (t === 9 || t === 10 || t === 11) {
-            this.move_(1, (current_cell[1] + 2)%4);
+            this.move_(1, (current_cell[1] + 2)%4, true);
         }
         await sleep(100)
         current_cell = map[this.state.y][this.state.x];
@@ -158,7 +159,7 @@ class Robot extends Component {
         let current_cell = map[this.state.y][this.state.x];
         let t = current_cell[0];
         if (t === 9 || t === 10 || t === 11 || t === 6 || t === 7 || t === 8 || t === 5) {
-            this.move_(1, (current_cell[1] + 2)%4);
+            this.move_(1, (current_cell[1] + 2)%4, true);
         }
         await sleep(100)
         current_cell = map[this.state.y][this.state.x];
@@ -202,7 +203,7 @@ class Robot extends Component {
             this.rotate(2);
         }
     }
-    move_(distance, rotation = null) {
+    move_(distance, rotation = null, skip_collision = false) {
         let x = this.state.x;
         let y = this.state.y;
         rotation = rotation === null ? this.state.rotation : rotation;
@@ -236,11 +237,79 @@ class Robot extends Component {
         x = clamp(x, 0, width - 1);
         y = clamp(y, 0, height - 1);
 
+        if (!skip_collision) {
+            console.log("collision");
+            distance = this.check_collision(x, y, this.state.x, this.state.y, distance);
+
+            x = this.state.x;
+            y = this.state.y;
+
+            if (rotation === 0) {
+                y += distance;
+            } else if (rotation === 1) {
+                x -= distance;
+            } else if (rotation === 2) {
+                y -= distance;
+            } else if (rotation === 3) {
+                x += distance;
+            }
+            x = clamp(x, 0, width - 1);
+            y = clamp(y, 0, height - 1);
+        }
+
         if (is_void) {
             console.log("void");
         }
 
         this.setState({x: x, y: y});
+        return distance;
+    }
+    check_collision(x, y, ox, oy, distance) {
+        let collisions = [];
+        let index = 0;
+        if (x !== ox) {
+            for (let i = Math.min(x, ox); i <= Math.max(x, ox); i++) {
+                collisions.push([]);
+                for (let robot of this.robot_refs) {
+                    if (robot.current.state.x === i && robot.current.state.y === y) {
+                        collisions[index].push(robot);
+                    }
+                }
+                index += 1;
+            }
+
+            if (x < ox) {
+                collisions.reverse();
+            }
+
+        } else if (y !== oy) {
+            for (let i = Math.min(y, oy); i <= Math.max(y, oy); i++) {
+                collisions.push([]);
+                for (let robot of this.robot_refs) {
+                    if (robot.current.state.x === x && robot.current.state.y === i) {
+                        collisions[index].push(robot);
+                    }
+                }
+                index += 1;
+            }
+
+            if (y < oy) {
+                collisions.reverse();
+            }
+        }
+
+        collisions = collisions.slice(1);
+
+        index = 0;
+        let dis = distance;
+        for (let col of collisions) {
+            for (let rob of col) {
+                dis = rob.current.move_(distance - index, this.state.rotation, true);
+                dis = index + dis;
+            }
+            index += 1;
+        }
+        return dis;
     }
     check_walls(x, y, ox, oy, distance) {
         const walls = [];
@@ -452,9 +521,9 @@ function CardsManager({ref, deck}) {
 
     useImperativeHandle(ref, () => {
         return {
-            get_action(index) {
+            get_card(index) {
                 let card = items["A"][index];
-                return cards[card]?.action;
+                return cards[card];
             }
         };
     }, [items, cards]);
@@ -480,14 +549,21 @@ function sleep(ms) {
 
 async function active_board_elements(cards_refs, robot_refs) {
     for (let phase = 0; phase < 5; phase++) {
-        console.log("activate card");
-        for (let robot = 0; robot < cards_refs.length; robot++) {
-            robot_refs[robot].current.handle_card(cards_refs[robot].current.get_action(phase));
+        console.log("phase ".concat(String(phase)));
+        const cards = [];
+        for (let robot = 0; robot < robot_refs.length; robot++) {
+            cards.push({"robot": robot_refs[robot].current, "card": cards_refs[robot].current.get_card(phase)});
+        }
+
+        cards.sort((a, b) => {return b.card?.priority - a.card?.priority;});
+
+        for (let obj of cards) {
+            obj.robot.handle_card(obj.card?.action);
+            await sleep(500);
         }
 
         await sleep(200);
 
-        console.log("activate_board_elements");
         //express conveyor belts
         for (let ref of robot_refs) {
             ref.current.express_conveyor();
@@ -526,7 +602,7 @@ function App() {
             <div className="grid" style={{"--grid-columns": width}}>
                 {Array.from(Array(width*height).keys().map(cell))}
                 {robot_ids.map((id) => (
-                    <Robot id={id} key={id} ref={robot_refs[id]} />
+                    <Robot id={id} key={id} ref={robot_refs[id]} robot_refs={robot_refs} />
                 ))}
             </div>
             <div className="ui">
