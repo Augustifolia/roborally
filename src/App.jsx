@@ -134,11 +134,12 @@ function clamp(value, min, max) {
 }
 
 class Robot extends Component {
-    constructor({id, x=4, y=8, rotation=3, robot_refs}) {
+    constructor({id, x=4, y=8, rotation=3, robot_refs, card_ref}) {
         super();
         this.state = {x: x, y: y, rotation: rotation};
         this.id = id;
         this.robot_refs = robot_refs;
+        this.card_ref = card_ref;
     }
     async express_conveyor() {
         let current_cell = map[this.state.y][this.state.x];
@@ -238,7 +239,6 @@ class Robot extends Component {
         y = clamp(y, 0, height - 1);
 
         if (!skip_collision) {
-            console.log("collision");
             distance = this.check_collision(x, y, this.state.x, this.state.y, distance);
 
             x = this.state.x;
@@ -311,7 +311,7 @@ class Robot extends Component {
         }
         return dis;
     }
-    check_walls(x, y, ox, oy, distance) {
+    check_walls(x, y, ox, oy, distance, check_voids=true) {
         const walls = [];
         let voids = [];
         let collisions = [];
@@ -378,7 +378,7 @@ class Robot extends Component {
         }
 
         let is_void = false;
-        if (void_distance <= distance_ && voids.includes(1)) {
+        if (void_distance <= distance_ && voids.includes(1) && check_voids) {
             distance_ = void_distance;
             is_void = true;
         }
@@ -390,6 +390,87 @@ class Robot extends Component {
     }
     rotate(amount) {
         this.setState({rotation: (this.state.rotation + amount)%4});
+    }
+    resolv_laser(rotation=null) {
+        let distance = width;
+        let x = this.state.x;
+        let y = this.state.y;
+        rotation = rotation === null ? this.state.rotation : rotation;
+        let is_void = false;
+
+        if (rotation === 0) {
+            y += distance;
+        } else if (rotation === 1) {
+            x -= distance;
+        } else if (rotation === 2) {
+            y -= distance;
+        } else if (rotation === 3) {
+            x += distance;
+        }
+        x = clamp(x, 0, width - 1);
+        y = clamp(y, 0, height - 1);
+
+        [distance, is_void] = this.check_walls(x, y, this.state.x, this.state.y, distance, false);
+        x = this.state.x;
+        y = this.state.y;
+
+        if (rotation === 0) {
+            y += distance;
+        } else if (rotation === 1) {
+            x -= distance;
+        } else if (rotation === 2) {
+            y -= distance;
+        } else if (rotation === 3) {
+            x += distance;
+        }
+        x = clamp(x, 0, width - 1);
+        y = clamp(y, 0, height - 1);
+
+        this.check_laser(x, y, this.state.x, this.state.y, distance);
+    }
+    check_laser(x, y, ox, oy, distance) {
+        let collisions = [];
+        let index = 0;
+        if (x !== ox) {
+            for (let i = Math.min(x, ox); i <= Math.max(x, ox); i++) {
+                collisions.push([]);
+                for (let robot of this.robot_refs) {
+                    if (robot.current.state.x === i && robot.current.state.y === y) {
+                        collisions[index].push(robot);
+                    }
+                }
+                index += 1;
+            }
+
+            if (x < ox) {
+                collisions.reverse();
+            }
+
+        } else if (y !== oy) {
+            for (let i = Math.min(y, oy); i <= Math.max(y, oy); i++) {
+                collisions.push([]);
+                for (let robot of this.robot_refs) {
+                    if (robot.current.state.x === x && robot.current.state.y === i) {
+                        collisions[index].push(robot);
+                    }
+                }
+                index += 1;
+            }
+
+            if (y < oy) {
+                collisions.reverse();
+            }
+        }
+
+        collisions = collisions.slice(1);
+
+        for (let col of collisions) {
+            if (col.length !== 0) {
+                for (let rob of col) {
+                    rob.current.card_ref.current.damage(1);
+                }
+            }
+        }
     }
     render() {
         return <img
@@ -511,7 +592,7 @@ function Column({children, id}) {
 }
 
 function CardsManager({ref, deck}) {
-    let number_of_cards = 9;
+    const [number_of_cards, setNumber_of_cards] = useState(9);
     let ids = Array.from(Array(number_of_cards).keys());
     const [cards, setCards] = useState(deck.get_hand(number_of_cards));
     const [items, setItems] = useState({
@@ -524,9 +605,16 @@ function CardsManager({ref, deck}) {
             get_card(index) {
                 let card = items["A"][index];
                 return cards[card];
+            },
+            new_hand() {
+                setCards(deck.get_hand(number_of_cards));
+                setItems({A: [], B: ids});
+            },
+            damage(amount) {
+                setNumber_of_cards(Math.max(number_of_cards - amount, 0));
             }
         };
-    }, [items, cards]);
+    }, [items, cards, number_of_cards]);
 
     return <DragDropProvider
         onDragOver={(event) => {
@@ -540,6 +628,7 @@ function CardsManager({ref, deck}) {
                 ))}
             </Column>
         ))}
+        <p>{"Damage taken: " + (9 - number_of_cards)}</p>
     </DragDropProvider>
 }
 
@@ -581,6 +670,9 @@ async function active_board_elements(cards_refs, robot_refs) {
             ref.current.gear();
         }
         //board lasers
+        for (let robot of robot_refs) {
+            robot.current.resolv_laser();
+        }
         //crushers activate, destroying robot
         await sleep(200);
         for (let ref of robot_refs) {
@@ -588,6 +680,10 @@ async function active_board_elements(cards_refs, robot_refs) {
         }
 
         await sleep(1000);
+    }
+
+    for (let card of cards_refs) {
+        card.current.new_hand();
     }
 }
 
@@ -602,7 +698,7 @@ function App() {
             <div className="grid" style={{"--grid-columns": width}}>
                 {Array.from(Array(width*height).keys().map(cell))}
                 {robot_ids.map((id) => (
-                    <Robot id={id} key={id} ref={robot_refs[id]} robot_refs={robot_refs} />
+                    <Robot id={id} key={id} ref={robot_refs[id]} robot_refs={robot_refs} card_ref={cards_refs[id]} />
                 ))}
             </div>
             <div className="ui">

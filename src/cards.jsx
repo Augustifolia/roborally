@@ -69,7 +69,7 @@ export class Deck {
     }
 
     next() {
-        if (this.counter > this.deck.length) {
+        if (this.counter >= this.deck.length) {
             this.counter = 0;
         }
         let card = this.deck[this.counter];
