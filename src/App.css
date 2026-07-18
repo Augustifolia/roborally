@@ -74,12 +74,31 @@
   --y-position: 0;
   aspect-ratio: 1 / 1;
   width: var(--grid-width);
-  display: block;
   position: absolute;
   z-index: 2;
   left: calc(var(--x-position) * var(--grid-width));
   top: calc(var(--y-position) * var(--grid-width));
   transition: left var(--animation-speed), top var(--animation-speed), transform var(--animation-speed);
+}
+
+.robot-laser {
+  --x-position: 0;
+  --y-position: 0;
+  --hit-x: 0;
+  --hit-y: 0;
+  position: absolute;
+  height: var(--grid-width);
+  z-index: 1;
+  animation: --robot-laser 1s linear infinite;
+}
+
+@keyframes --robot-laser {
+  from {left: calc((var(--x-position) + 0.5) * var(--grid-width)); top: calc(var(--y-position) * var(--grid-width));}
+  to {left: calc((var(--hit-x) + 0.5) * var(--grid-width)); top: calc(var(--hit-y) * var(--grid-width));}
+}
+
+.hidden {
+  display: none;
 }
 
 .btn {
@@ -181,6 +200,15 @@ body {
   filter: drop-shadow(1px 1px 1px black);
 }
 
+.card-arrow {
+  display: grid;
+
+  * {
+    aspect-ratio: 1 / 1;
+    filter: drop-shadow(1px 1px 1px black);
+  }
+}
+
 .head {
   border-width: 20px;
   border-color: transparent;
@@ -188,16 +216,10 @@ body {
 }
 
 .card-arrow-right {
-  display: grid;
   grid-template-columns: 1fr 1fr;
   padding-left: 15px;
   padding-bottom: 15px;
   translate: 5px 5px;
-
-  * {
-    aspect-ratio: 1 / 1;
-    filter: drop-shadow(1px 1px 1px black);
-  }
 
   .arrow-spacer {
     height: calc(100% - 7px);
@@ -218,16 +240,10 @@ body {
 }
 
 .card-arrow-left {
-  display: grid;
   grid-template-columns: 1fr 1fr;
   padding-right: 15px;
   padding-bottom: 15px;
   translate: -5px 5px;
-
-  * {
-    aspect-ratio: 1 / 1;
-    filter: drop-shadow(1px 1px 1px black);
-  }
 
   .arrow-spacer {
     height: calc(100% - 7px);
@@ -248,14 +264,8 @@ body {
 }
 
 .card-arrow-u {
-  display: grid;
   grid-template-columns: 1fr 1fr;
   translate: -7px 5px;
-
-  * {
-    aspect-ratio: 1 / 1;
-    filter: drop-shadow(1px 1px 1px black);
-  }
 
   .arrow-left {
     border-top-right-radius: 100%;
@@ -284,14 +294,8 @@ body {
 
 
 .card-arrow-up {
-  display: grid;
   grid-template-columns: 1fr;
   translate: 0 -5px;
-
-  * {
-    aspect-ratio: 1 / 1;
-    filter: drop-shadow(1px 1px 1px black);
-  }
 
   .arrow-up {
     border-right: solid var(--color) 7px;
@@ -308,14 +312,8 @@ body {
 }
 
 .card-arrow-down {
-  display: grid;
   grid-template-columns: 1fr;
   translate: 0 15px;
-
-  * {
-    aspect-ratio: 1 / 1;
-    filter: drop-shadow(1px 1px 1px black);
-  }
 
   .arrow-up {
     border-right: solid var(--color) 7px;

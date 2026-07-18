@@ -3,14 +3,18 @@ import {map} from "./map.jsx";
 import robot from "./assets/robot.png";
 import {sleep, clamp} from "./common.jsx";
 import {width, height, get_wall} from "./map.jsx"
+import laser from "./assets/laser.png";
 
 export class Robot extends Component {
-    constructor({id, x=6, y=6, rotation=3, robot_refs, card_ref}) {
+    constructor({id, x=6, y=2, rotation=3, robot_refs, card_ref}) {
         super();
-        this.state = {x: x, y: y, rotation: rotation};
+        this.state = {x: x, y: y, rotation: rotation, hit_x: null, hit_y: null, show_laser: false, spawn_x: 1, spawn_y: 1};
         this.id = id;
         this.robot_refs = robot_refs;
         this.card_ref = card_ref;
+    }
+    respawn() {
+        this.setState({...this.state, x: this.state.spawn_x, y: this.state.spawn_y});
     }
     async express_conveyor() {
         let current_cell = map[this.state.y][this.state.x];
@@ -56,6 +60,8 @@ export class Robot extends Component {
         let t = current_cell[0];
         if (t === 5) {
             console.log("crushed");
+            this.respawn();
+            this.card_ref.current.set_health(7);
         }
     }
     repair(card) {
@@ -139,9 +145,11 @@ export class Robot extends Component {
 
         if (is_void) {
             console.log("void");
+            this.respawn();
+            this.card_ref.current.set_health(7);
+        } else {
+            this.setState({x: x, y: y});
         }
-
-        this.setState({x: x, y: y});
         return distance;
     }
     check_collision(x, y, ox, oy, distance) {
@@ -306,9 +314,12 @@ export class Robot extends Component {
         x = clamp(x, 0, width - 1);
         y = clamp(y, 0, height - 1);
 
-        this.check_laser(x, y, this.state.x, this.state.y, distance);
+        let did_collide = this.check_laser(x, y, this.state.x, this.state.y);
+        if (!did_collide) {
+            this.setState({...this.state, hit_x: x, hit_y: y, show_laser: true});
+        }
     }
-    check_laser(x, y, ox, oy, distance) {
+    check_laser(x, y, ox, oy) {
         let collisions = [];
         let index = 0;
         if (x !== ox) {
@@ -344,22 +355,34 @@ export class Robot extends Component {
 
         collisions = collisions.slice(1);
 
+        let did_collide = false;
         for (let col of collisions) {
             if (col.length !== 0) {
                 for (let rob of col) {
                     rob.current.card_ref.current.damage(1);
+                    this.setState({...this.state, hit_x:rob.current.state.x, hit_y:rob.current.state.y, show_laser:true});
+                    did_collide = true;
                 }
             }
         }
+        return did_collide;
     }
     render() {
-        return <img
-            className={"robot-img rot" + this.state.rotation*90%360}
-            src={robot}
-            onClick={() => {this.move(1)}}
-            alt="robot"
-            style={{"--x-position": this.state.x, "--y-position": this.state.y}}
-            title={"" + this.state.x + ", " + this.state.y + ", " + this.state.rotation}
-        />
+        return <>
+            <img
+                className={"robot-img rot" + this.state.rotation*90%360}
+                src={robot}
+                onClick={() => {this.move(1)}}
+                alt="robot"
+                style={{"--x-position": this.state.x, "--y-position": this.state.y}}
+                title={"" + this.state.x + ", " + this.state.y + ", " + this.state.rotation}
+            />
+            <img
+                className={"robot-laser " + (this.state.show_laser ? "": "hidden") + " rot" + this.state.rotation*90%360}
+                src={laser}
+                alt="laser"
+                style={{"--x-position": this.state.x, "--y-position": this.state.y, "--hit-x": this.state.hit_x, "--hit-y": this.state.hit_y}}
+            />
+        </>
     }
 }

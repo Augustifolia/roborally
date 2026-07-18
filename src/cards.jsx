@@ -7,7 +7,7 @@ import {clamp} from "./common.jsx";
 
 function ArrowRight() {
     return <div className="outer card-arrow-right-outer">
-        <div className="card-arrow-right">
+        <div className="card-arrow card-arrow-right">
             <div>
                 <div className="arrow-spacer"></div>
                 <div className="arrow-right"></div>
@@ -19,7 +19,7 @@ function ArrowRight() {
 
 function ArrowLeft() {
     return <div className="outer card-arrow-left-outer">
-        <div className="card-arrow-left">
+        <div className="card-arrow card-arrow-left">
             <div className="head arrow-head"></div>
             <div>
                 <div className="arrow-spacer"></div>
@@ -31,7 +31,7 @@ function ArrowLeft() {
 
 function ArrowU() {
     return <div className="outer card-arrow-u-outer">
-        <div className="card-arrow-u">
+        <div className="card-arrow card-arrow-u">
             <div className="arrow-right"></div>
             <div className="arrow-left"></div>
             <div className="head arrow-head"></div>
@@ -41,7 +41,7 @@ function ArrowU() {
 
 function ArrowUp() {
     return <div className="outer card-arrow-up-outer">
-        <div className="card-arrow-up">
+        <div className="card-arrow card-arrow-up">
             <div className="head arrow-head"></div>
             <div className="arrow-up"></div>
         </div>
@@ -50,7 +50,7 @@ function ArrowUp() {
 
 function ArrowDown() {
     return <div className="outer card-arrow-down-outer">
-        <div className="card-arrow-down">
+        <div className="card-arrow card-arrow-down">
             <div className="arrow-up"></div>
             <div className="head arrow-head"></div>
         </div>
@@ -112,7 +112,7 @@ function Column({children, id}) {
   );
 }
 
-export function CardsManager({ref, deck}) {
+export function CardsManager({ref, deck, robot}) {
     const [number_of_cards, setNumber_of_cards] = useState(9);
     let ids = Array.from(Array(number_of_cards).keys());
     const [cards, setCards] = useState(deck.get_hand(number_of_cards));
@@ -132,7 +132,13 @@ export function CardsManager({ref, deck}) {
                 setItems({A: [], B: ids});
             },
             damage(amount) {
-                setNumber_of_cards(Math.max(number_of_cards - amount, 0));
+                if (number_of_cards <= 0) {
+                    console.log("Robot destroyed. To much damage received.");
+                    robot.current.respawn();
+                    this.set_health(7);
+                } else {
+                    setNumber_of_cards(Math.max(number_of_cards - amount, 0));
+                }
             },
             heal(amount) {
                 setNumber_of_cards(Math.min(number_of_cards + amount, 9));

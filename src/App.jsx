@@ -40,11 +40,18 @@ async function do_turn(cards_refs, robot_refs) {
             ref.current.gear();
         }
         //board lasers
+
+        //robot lasers
         for (let robot of robot_refs) {
             robot.current.resolv_laser();
         }
-        //crushers activate, destroying robot
+        await sleep(1000);
+        for (let robot of robot_refs) {
+            robot.current.setState({...robot.current.state, show_laser: false});
+        }
+
         await sleep(200);
+        //crushers activate, destroying robot
         for (let ref of robot_refs) {
             ref.current.crusher();
         }
@@ -81,7 +88,7 @@ function App() {
             </div>
             <div className="ui">
                 {robot_ids.map((id) => {
-                    return <CardsManager key={id} ref={cards_refs[id]} deck={deck} />
+                    return <CardsManager key={id} ref={cards_refs[id]} deck={deck} robot={robot_refs[id]} />
                 })}
                 <div className="run-div">
                     <button className="btn" onClick={() => {do_turn(cards_refs, robot_refs)}}>Start Turn</button>
