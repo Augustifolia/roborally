@@ -1,3 +1,123 @@
+import crusher from './assets/crusher.png'
+import floor from './assets/floor.png'
+import repair from './assets/repair.png'
+import repair_2x from './assets/repair_2x.png'
+import roller from './assets/roller.png'
+import roller_2x from './assets/roller_2x.png'
+import roller_2x_right from './assets/roller_2x_right.png'
+import roller_2x_left from './assets/roller_2x_left.png'
+import roller_left from './assets/roller_left.png'
+import roller_right from './assets/roller_right.png'
+import void_ from './assets/void.png'
+import wall from './assets/wall.png'
+import gear_left from './assets/gear_left.png'
+import gear_right from './assets/gear_right.png'
+import laser from './assets/laser.png'
+const flag = "flag";
+
+export const width = 12;
+export const height = 12;
+
+export function get_wall(x, y) {
+    let w = "000" + String(map[y][x][2]);
+    w = w.slice(-4);
+    return w;
+}
+
+function get_texture(num) {
+    switch (num) {
+        case 0:
+            return floor;
+        case 1:
+            return repair;
+        case 2:
+            return repair_2x;
+        case 3:
+            return flag;
+        case 4:
+            return void_;
+        case 5:
+            return crusher;
+        case 6:
+            return roller;
+        case 7:
+            return roller_left;
+        case 8:
+            return roller_right;
+        case 9:
+            return roller_2x;
+        case 10:
+            return roller_2x_left;
+        case 11:
+            return roller_2x_right;
+        case 12:
+            return gear_left;
+        case 13:
+            return gear_right;
+    }
+}
+
+function texture_from_coords(x, y) {
+    return get_texture(map[y][x][0]);
+}
+
+function rot_from_coords(x, y) {
+    switch (map[y][x][1]) {
+        case 0:
+            return "rot0";
+        case 1:
+            return "rot90";
+        case 2:
+            return "rot180";
+        case 3:
+            return "rot270";
+    }
+}
+
+function coordinates(key) {
+    let x = key%width;
+    let y = Math.floor(key/height);
+    return [x, y];
+}
+
+function get_key(x, y) {
+    return y*height + x;
+}
+
+function wall_(x, y) {
+    let w = "000" + String(map[y][x][2]);
+    w = w.slice(-4);
+    const a = []
+    let i = 0
+    for (let c of w) {
+        if (c === "1") {
+            a.push(
+                <div key={i} className={"wall-div " + "wall" + i}>
+                    <img className={"wall"} src={wall}></img>
+                </div>
+            );
+        }
+        i++
+    }
+
+    return a
+}
+
+function cell(key) {
+    let [x, y] = coordinates(key);
+    return (
+        <div key={key} className={"cell rot0"}>
+            {wall_(x, y)}
+            <img className={"texture " + rot_from_coords(x, y)} src={texture_from_coords(x, y)} alt={key} title={x + ", " + y + " (" + key + ")"}></img>
+        </div>
+    )
+}
+
+export function Grid() {
+    return <>
+        {Array.from(Array(width*height).keys().map(cell))}
+    </>
+}
 
 // map of cells, each cell has texture, rotation and wall placement
 export const map = [
