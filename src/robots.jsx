@@ -1,20 +1,38 @@
 import {Component} from "react";
 import {map} from "./map.jsx";
 import robot from "./assets/robot.png";
-import {sleep, clamp} from "./common.jsx";
+import {sleep, clamp, colors} from "./common.jsx";
 import {width, height, get_wall} from "./map.jsx"
 import laser from "./assets/laser.png";
 
 export class Robot extends Component {
-    constructor({id, x=6, y=2, rotation=3, robot_refs, card_ref}) {
+    constructor({id, x=0, y=2, rotation=3, robot_refs, card_ref}) {
         super();
-        this.state = {x: x, y: y, rotation: rotation, hit_x: null, hit_y: null, show_laser: false, spawn_x: 1, spawn_y: 1};
+        this.state = {x: x, y: y, rotation: rotation, visual_rotation: rotation*90, hit_x: null, hit_y: null, show_laser: false, spawn_x: x, spawn_y: y, checkpoint: 1};
         this.id = id;
         this.robot_refs = robot_refs;
         this.card_ref = card_ref;
     }
     respawn() {
         this.setState({...this.state, x: this.state.spawn_x, y: this.state.spawn_y});
+    }
+    touch_checkpoint() {
+        let current_cell = map[this.state.y][this.state.x];
+        let t = current_cell[0];
+        const options = {}
+        if (t === 1 || t === 2 || t === 14) {
+        } else if (t === 15) {
+            if (this.state.checkpoint === 1) {
+                options["checkpoint"] = 2
+            }
+        } else if (t === 16) {
+            if (this.state.checkpoint === 2) {
+                options["checkpoint"] = 3
+            }
+        } else {
+            return;
+        }
+        this.setState({...this.state, ...options, spawn_x: this.state.x, spawn_y: this.state.y});
     }
     async express_conveyor() {
         let current_cell = map[this.state.y][this.state.x];
@@ -55,19 +73,21 @@ export class Robot extends Component {
             this.rotate(1);
         }
     }
-    crusher() {
+    crusher(phase) {
         let current_cell = map[this.state.y][this.state.x];
         let t = current_cell[0];
         if (t === 5) {
-            console.log("crushed");
-            this.respawn();
-            this.card_ref.current.set_health(7);
+            if (phase === 2 || phase === 4) {
+                console.log("crushed");
+                this.respawn();
+                this.card_ref.current.set_health(7);
+            }
         }
     }
     repair(card) {
         let current_cell = map[this.state.y][this.state.x];
         let t = current_cell[0];
-        if (t === 1) {
+        if (t === 1 || t === 14 || t === 15 || t === 16) {
             card.heal(1);
         } else if (t === 2) {
             card.heal(2);
@@ -277,7 +297,7 @@ export class Robot extends Component {
         return [distance_, is_void];
     }
     rotate(amount) {
-        this.setState({rotation: (this.state.rotation + amount)%4});
+        this.setState({rotation: (this.state.rotation + amount)%4, visual_rotation: this.state.visual_rotation + 90*amount});
     }
     resolv_laser(rotation=null) {
         let distance = width;
@@ -370,12 +390,12 @@ export class Robot extends Component {
     render() {
         return <>
             <img
-                className={"robot-img rot" + this.state.rotation*90%360}
+                className={"robot-img " + colors[this.id] + "-border"}
                 src={robot}
                 onClick={() => {this.move(1)}}
                 alt="robot"
-                style={{"--x-position": this.state.x, "--y-position": this.state.y}}
-                title={"" + this.state.x + ", " + this.state.y + ", " + this.state.rotation}
+                style={{"--x-position": this.state.x, "--y-position": this.state.y, transform: 'rotate(' + this.state.visual_rotation + 'deg)'}}
+                title={"" + this.state.checkpoint + ", " + this.state.spawn_x + ", " + this.state.spawn_y}
             />
             <img
                 className={"robot-laser " + (this.state.show_laser ? "": "hidden") + " rot" + this.state.rotation*90%360}

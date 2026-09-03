@@ -5,3 +5,6 @@ export function sleep(ms) {
 export function clamp(value, min, max) {
     return Math.max(Math.min(value, max), min);
 }
+
+
+export const colors = ["red", "green", "blue"];

@@ -3,7 +3,7 @@ import {DragDropProvider, useDroppable} from "@dnd-kit/react";
 import {CollisionPriority} from "@dnd-kit/abstract";
 import {useImperativeHandle, useState} from "react";
 import {move} from "@dnd-kit/helpers";
-import {clamp} from "./common.jsx";
+import {clamp, colors} from "./common.jsx";
 
 function ArrowRight() {
     return <div className="outer card-arrow-right-outer">
@@ -90,29 +90,29 @@ function Card({id, index, column, card}) {
         arrow = <ArrowU></ArrowU>
     }
     return <div className="card" ref={ref} data-dragging={isDragging}>
-        <a>{priority}</a>
+        <span>{priority}</span>
         {arrow}
         <h4>{text}</h4>
     </div>
 }
 
-function Column({children, id}) {
+function Column({children, id, color}) {
   const {isDropTarget, ref} = useDroppable({
     id,
     type: 'column',
     accept: 'item',
     collisionPriority: CollisionPriority.Low,
   });
-  const style = isDropTarget ? {background: '#00000030'} : undefined;
+  const style = isDropTarget ? {filter: 'drop-shadow(0 0 5px grey)'} : undefined;
 
   return (
-    <div className="column" ref={ref} style={style}>
+    <div className={"column" + " " + color} ref={ref} style={style}>
       {children}
     </div>
   );
 }
 
-export function CardsManager({ref, deck, robot}) {
+export function CardsManager({ref, deck, robot, id, current_player}) {
     const [number_of_cards, setNumber_of_cards] = useState(9);
     let ids = Array.from(Array(number_of_cards).keys());
     const [cards, setCards] = useState(deck.get_hand(number_of_cards));
@@ -155,13 +155,13 @@ export function CardsManager({ref, deck, robot}) {
         }}
     >
         {Object.entries(items).map(([column, items]) => (
-            <Column key={column} id={column}>
+            <Column key={column} id={column} color={colors[id]}>
                 {items.map((id, index) => (
                     <Card key={id} id={id} index={index} column={column} card={cards[id]} />
                 ))}
             </Column>
         ))}
-        <p>{"Damage taken: " + (9 - number_of_cards)}</p>
+        <h3 className="background-blur">{"Damage taken: " + (9 - number_of_cards)}</h3>
     </DragDropProvider>
 }
 
