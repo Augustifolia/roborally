@@ -7,6 +7,19 @@ import {CardsManager} from "./cards.jsx"
 import {Grid, width} from "./map.jsx"
 
 async function do_turn(cards_refs, robot_refs, set_phase) {
+    // check that all robots are programmed
+    let can_start_turn = true;
+    for (let card of cards_refs) {
+        console.log(card.current.programmed_cards())
+        if (card.current.programmed_cards() !== 5) {
+            can_start_turn = false;
+        }
+    }
+    if (!can_start_turn) {
+        console.log("Can't start turn");
+        return;
+    }
+
     for (let phase = 0; phase < 5; phase++) {
         set_phase(phase + 1);
         const cards = [];

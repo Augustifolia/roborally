@@ -112,8 +112,9 @@ function Column({children, id, color}) {
   );
 }
 
-export function CardsManager({ref, deck, robot, id, current_player}) {
+export function CardsManager({ref, deck, robot, id}) {
     const [number_of_cards, setNumber_of_cards] = useState(9);
+    const [number_of_lives, set_number_of_lives] = useState(4);
     let ids = Array.from(Array(number_of_cards).keys());
     const [cards, setCards] = useState(deck.get_hand(number_of_cards));
     const [items, setItems] = useState({
@@ -128,8 +129,25 @@ export function CardsManager({ref, deck, robot, id, current_player}) {
                 return cards[card];
             },
             new_hand() {
-                setCards(deck.get_hand(number_of_cards));
-                setItems({A: [], B: ids});
+                if (number_of_cards >= 5) {
+                    setCards(deck.get_hand(number_of_cards));
+                    setItems({A: [], B: ids});
+                } else {
+                    const items_to_keep = items["A"].slice(number_of_cards);
+                    const deck_ = deck.get_hand(number_of_cards);
+                    for (let item of items_to_keep) {
+                        deck_.push(cards[item]);
+                    }
+                    setCards(deck_);
+                    const items_ = [];
+                    for (let index = number_of_cards; index < 5; index++) {
+                        items_.push(index);
+                    }
+                    setItems({A: items_, B: ids});
+                }
+            },
+            programmed_cards() {
+                return items["A"].length;
             },
             damage(amount) {
                 if (number_of_cards <= 0) {
@@ -145,6 +163,9 @@ export function CardsManager({ref, deck, robot, id, current_player}) {
             },
             set_health(amount) {
                 setNumber_of_cards(clamp(amount, 0, 9));
+            },
+            remove_life() {
+                set_number_of_lives(Math.max(0, number_of_lives - 1));
             }
         };
     }, [items, cards, number_of_cards]);
@@ -161,7 +182,10 @@ export function CardsManager({ref, deck, robot, id, current_player}) {
                 ))}
             </Column>
         ))}
-        <h3 className="background-blur">{"Damage taken: " + (9 - number_of_cards)}</h3>
+        <div style={{display: "flex", gap: "2rem"}}>
+            <h3 className="background-blur">{"Damage taken: " + (9 - number_of_cards)}</h3>
+            <h3 className="background-blur">{"Lives: " + number_of_lives}</h3>
+        </div>
     </DragDropProvider>
 }
 

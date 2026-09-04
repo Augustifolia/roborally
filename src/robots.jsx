@@ -15,6 +15,7 @@ export class Robot extends Component {
     }
     respawn() {
         this.setState({...this.state, x: this.state.spawn_x, y: this.state.spawn_y});
+        this.card_ref.current.remove_life();
     }
     touch_checkpoint() {
         let current_cell = map[this.state.y][this.state.x];
