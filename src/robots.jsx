@@ -78,7 +78,7 @@ export class Robot extends Component {
         let current_cell = map[this.state.y][this.state.x];
         let t = current_cell[0];
         if (t === 5) {
-            if (phase === 2 || phase === 4) {
+            if (phase === 1 || phase === 3) {
                 console.log("crushed");
                 this.respawn();
                 this.card_ref.current.set_health(7);
