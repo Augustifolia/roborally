@@ -158,6 +158,9 @@
   }
 }
 
+.active {
+  background-color: #265526;
+}
 
 .btn-start {
   position: absolute;

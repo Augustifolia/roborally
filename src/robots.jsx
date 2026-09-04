@@ -126,8 +126,6 @@ export class Robot extends Component {
         } else if (rotation === 3) {
             x += distance;
         }
-        x = clamp(x, 0, width - 1);
-        y = clamp(y, 0, height - 1);
 
         [distance, is_void] = this.check_walls(x, y, this.state.x, this.state.y, distance);
         x = this.state.x;
@@ -142,8 +140,6 @@ export class Robot extends Component {
         } else if (rotation === 3) {
             x += distance;
         }
-        x = clamp(x, 0, width - 1);
-        y = clamp(y, 0, height - 1);
 
         if (!skip_collision) {
             distance = this.check_collision(x, y, this.state.x, this.state.y, distance);
@@ -160,8 +156,6 @@ export class Robot extends Component {
             } else if (rotation === 3) {
                 x += distance;
             }
-            x = clamp(x, 0, width - 1);
-            y = clamp(y, 0, height - 1);
         }
 
         if (is_void) {
@@ -229,13 +223,16 @@ export class Robot extends Component {
             for (let i = Math.min(x, ox); i <= Math.max(x, ox); i++) {
                 let wall = get_wall(i, y);
                 walls.push(wall);
-                let current_cell = map[y][i];
-                if (current_cell[0] === 4) {
+                if (x < 0 || x > width - 1 || y < 0 || y > height - 1) {
                     voids.push(1);
                 } else {
-                    voids.push(0);
+                    let current_cell = map[y][i];
+                    if (current_cell[0] === 4) {
+                        voids.push(1);
+                    } else {
+                        voids.push(0);
+                    }
                 }
-
             }
 
             for (let wall of walls) {
@@ -250,11 +247,15 @@ export class Robot extends Component {
             for (let i = Math.min(y, oy); i <= Math.max(y, oy); i++) {
                 let wall = get_wall(x, i);
                 walls.push(wall);
-                let current_cell = map[i][x];
-                if (current_cell[0] === 4) {
+                if (x < 0 || x > width - 1 || y < 0 || y > height - 1) {
                     voids.push(1);
                 } else {
-                    voids.push(0);
+                    let current_cell = map[i][x];
+                    if (current_cell[0] === 4) {
+                        voids.push(1);
+                    } else {
+                        voids.push(0);
+                    }
                 }
             }
 

@@ -21,6 +21,9 @@ export const width = 12;
 export const height = 12;
 
 export function get_wall(x, y) {
+    if (x < 0 || x > width - 1 || y < 0 || y > height - 1) {
+        return "0000";
+    }
     let w = "000" + String(map[y][x][2]);
     w = w.slice(-4);
     return w;

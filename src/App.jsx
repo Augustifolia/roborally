@@ -112,9 +112,13 @@ function App() {
             </div>
             <div className="ui">
                 {phase !== 0? <h1 className="background-blur">Phase {phase}</h1>: <h1 className="background-blur">Programming Phase</h1>}
+                <div style={{display: "flex", gap: "0.5rem"}}>
+                    {robot_ids.map((id) => {
+                        return <button key={id} className={"btn" + (id===current_player?" active":"")} onClick={() => {set_current_player(id)}} style={{marginBottom: "7px"}}>Player {id + 1} </button>
+                    })}
+                </div>
                 {robot_ids.map((id) => {
                     return <div key={id}>
-                        <button className="btn" onClick={() => {set_current_player(id)}} style={{marginBottom: "7px"}}>Player {id + 1} </button>
                         <div style={current_player !== id?{display: 'none'}: {}} key={id}>
                             <CardsManager key={id} ref={cards_refs[id]} deck={deck} robot={robot_refs[id]} id={id} />
                         </div>
